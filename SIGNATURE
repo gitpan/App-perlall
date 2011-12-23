@@ -1,0 +1,45 @@
+This file contains message digests of all files listed in MANIFEST,
+signed via the Module::Signature module, version 0.68.
+
+To verify the content in this distribution, first make sure you have
+Module::Signature installed, then type:
+
+    % cpansign -v
+
+It will check each file's integrity, as well as the signature's
+validity.  If "==> Signature verified OK! <==" is not displayed,
+the distribution may already have been compromised, and you should
+not run its Makefile.PL or Build.PL.
+
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+SHA1 236343f0e8ff49e987a7854003fee4fa7eb25278 .perlall
+SHA1 26ab2f963a9eade8e2201b75c60aef089cb45b1b Changes
+SHA1 012fe1ce01fb53ea10dfac7145ee7217b8b3ae85 LICENSE
+SHA1 431b621eb4c92e8d20c245eee0931ac14126378c MANIFEST
+SHA1 f5d5b45537b84f5975f0f190f331affd1097284c META.json
+SHA1 1623532fba928d0f21061751775a2106c8999475 META.yml
+SHA1 fdef28ba57fcd1782c41f118b049f167b181054d Makefile.PL
+SHA1 5ae85f636d3f3c34e687db2b0535050a39ca0a61 README
+SHA1 efb5acd6aefa8ef32923eef8aa4080799dcee8d1 scripts/perlall
+SHA1 d90d4c1194ca8fd04915b2a2180078b57f945007 t/00-compile.t
+SHA1 a79f2435af8bc9b8769f07de90e3f7475e7ba606 t/01-build.t
+SHA1 75b72976603549d01705cc9524590198e9fd62fc t/01-linked.t
+SHA1 d381cb9e1ef625f6e502bf125612cd5f133e7a1a t/01-options.t
+SHA1 eaed7f5edf5b5b301dd3f05a05d91c0ea80a2f18 t/02-init.t
+SHA1 9c565a88646d58ccae355267fe460aaae849dc31 t/03-do.t
+SHA1 48227d8591b66ea63bc15e495d8ec257f6da0cfe t/04-make.t
+SHA1 4e686363e7b734c4fe648aae635762763dd1ee48 t/05-maketest.t
+SHA1 c81fd713627398d3b502c1cfcd37dae0dd953774 t/06-makeinstall.t
+SHA1 5601cb8529b3f697e700ef8985c661c34de7d008 t/07-help.t
+SHA1 6fbda3b23711c3e75369ed02a2849381d0ebe540 t/08-version.t
+SHA1 7b8fce3eab9aadb9a6b86178246fb31da070f1d5 t/release-pod-coverage.t
+SHA1 7b8ee119c61c78aec82ea1c1ab9071a7086a3c0a t/release-pod-syntax.t
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (Darwin)
+
+iEYEARECAAYFAk7096YACgkQmm2SYo/9yULA8ACfZs5UTIdEl7ZkFtqaGg6SH2aF
+7BMAniE8lL2biHjONivj4m9F5vG1gfaF
+=T4Zy
+-----END PGP SIGNATURE-----
