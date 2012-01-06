@@ -4,6 +4,7 @@ eval 'exec /usr/bin/env perl  -S $0 ${1+"$@"}'
 
 #BEGIN {$DB::single=1} # debug into attribute handling
 # TODO:
+#   tee log.test unbuffered
 #   implement smoke, bench
 #   maketest --all (locally and testvm --all)
 #   more testvm_ctl: xen-shell, vmrun, VBoXManage
@@ -24,7 +25,7 @@ eval 'exec /usr/bin/env perl  -S $0 ${1+"$@"}'
 
 use strict;
 use 5.006;
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 use Config;
 use Cwd ();
 use File::Spec ();
@@ -57,7 +58,7 @@ BEGIN { # check platform support: perldoc perlport
   _auto_use( @extuse );
 }
 # 5.8.4: ??, 5.8.5: centos4, 5.8.8: centos5
-our @main_releases = qw(5.6.2 5.8.4 5.8.5 5.8.8 5.8.9 5.10.1 5.12.4 5.15.6);
+our @main_releases = qw(5.6.2 5.8.4 5.8.5 5.8.8 5.8.9 5.10.1 5.12.4 5.14.2 5.15.6);
 
 push @App::Rad::ISA, 'main';
 our @opts = (
@@ -680,7 +681,7 @@ sub _check_lock {
 	unlink $l;
       } else {
 	warn "Other perlall process $pid still running. perlall.lock kept\n";
-	#warn `pgrep -Ll $pid`,"\n";
+	warn `pgrep -Ll $pid`,"\n";
 	# unlink $l;
       }
     }
@@ -1685,7 +1686,7 @@ sub _make {
   my $make = $Config{make};
   # checks MB
   $c->_system( $make, "-s", "clean") if -f "Makefile";
-  $c->_lognew(_short($p));
+  $c->_lognew(_short($p)) unless $c->stash->{log_fh};
   if (-f "Makefile.PL") {
     $c->_system0( $p, "Makefile.PL");
     $c->_system1( $make);
@@ -1707,6 +1708,7 @@ sub make
   my $v = $c->options->{verbose};
   for my $p (@{$c->stash->{perlall}}) {
     local $c->options->{verbose} = $v;
+    undef $c->stash->{log_fh};
     $c->_make( $p);
     if ($argv) { # preserves quotes as in -e'my $a;'
       $c->options->{verbose} = 1 unless $c->options->{quiet};
@@ -1731,10 +1733,10 @@ sub maketest
 {
   my $c = shift;
   my $make = $Config{make};
-  $c->addopts( "verbose|v", "quiet|q", "dryrun!" );
+  $c->addopts( "verbose|v", "quiet|q", "dryrun!", 'forked' );
   my $gitshort;
   $gitshort = `svn info t | grep Revision` if -d '.svn';
-  $gitshort = `git log --oneline HEAD^1..HEAD` if -d '.git';
+  $gitshort = `git log --oneline -1` if -d '.git';
   for my $p (@{$c->stash->{perlall}}) {
     $c->_lognew(_short($p));
     my $fh = $c->stash->{log_fh};
@@ -1768,6 +1770,8 @@ sub maketest
     }
     print $fh `$p -V` if $fh;
   }
+  # special hooks:
+  `./store_rpt` if -f 'store_rpt';
   $c->_set_alias() if @{$c->stash->{perlall}} < 5;
 }
 
@@ -1789,6 +1793,7 @@ sub makeinstall
   my $v = $c->options->{verbose};
   for my $p (@{$c->stash->{perlall}}) {
     local $c->options->{verbose} = $v;
+    undef $c->stash->{log_fh};
     $c->_make($p);
     my $instcmd = "$sudo $make install";
     if ($c->options->{notest}) {
@@ -1892,6 +1897,13 @@ sub _vm_prevstatus {
   }
 }
 
+sub _vm_delstatus {
+  my $c = shift;
+  my $m = shift or die "_vm_delstatus missing vm name";
+  my @v = grep {$_->[0] ne $m} @{$c->stash->{vm}};
+  $c->stash->{vm} = \@v;
+}
+
 =item B<testvm> [OPTIONS] [user@]hostname...
 
 Does C<perlall maketest> in parallel on remote machines.
@@ -1941,8 +1953,8 @@ sub testvm
   my $c = shift;
   # testvm has a different option set and allows options after the command
   my $gopts = _opts($c->options);
-  $c->addopts( "all|a", "up", "prefix|p=s", "cmd|c=s", "option|o=s", "max|j=n", "fork!" );
-
+  $c->addopts( "all|a", "up", "prefix|p=s", "cmd|c=s", "option|o=s",
+	       "max|j=n", "fork!" );
   my ($base);
   my @testvm = split / /,$c->config->{testvm_all};
   my @machines = $c->options->{all} ? @testvm : @{$c->argv};
@@ -2006,10 +2018,15 @@ sub testvm
       # my $buf = ' 'x10000;
       my $logglob = $cmd eq 'maketest' ? "log.test-*" : "log.$cmd-*";
       if ($do_fork) { # run cmds in parallel
-	my @cmd = ("sh","-c","if ssh $m '$remotecmd'; then rsync -avz $m:$base/$logglob .; fi");
+	$remotecmd .= ' --forked' if $cmd = 'maketest';
+	my @cmd = ("sh","-c",
+		   "if ssh $m '$remotecmd'; then rsync -avz $m:$base/$logglob .; fi");
         # if virsh was resumed, pause it back afterwards
 	if ($c->stash->{vm} and my $prevstat = $c->_vm_prevstatus($m)) {
-	  @cmd = ("sh","-c","if ssh $m '$remotecmd'; then rsync -avz $m:$base/$logglob .;sudo virsh $m $prevstat; fi");
+	  @cmd = ("sh","-c",
+		  "if ssh $m '$remotecmd'; then rsync -avz $m:$base/$logglob .; "
+		  ."sudo virsh $m $prevstat; fi");
+	  _vm_delstatus($m);
 	}
 	my $pid;
 	#my $pid = IPC::Cmd::run_forked( \@cmd,
@@ -2020,12 +2037,12 @@ sub testvm
       FORK:
 	{
 	  if ($pid = fork) {
-	    $c->debug("forked $pid");
+	    $c->debug("forked $pid"); #parent
 	    push @forked, $pid;
 	    $msg = "forked";
 	    $c->_log(0,"forked $remotecmd on $m");
 	  } elsif (defined $pid) {
-	    exec @cmd;
+	    exec @cmd; 	# child just ends
 	  } elsif ($! == &Fcntl::EAGAIN) { # supposedly recoverable fork error
 	    sleep 5;
 	    redo FORK;
