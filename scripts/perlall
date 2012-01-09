@@ -25,7 +25,7 @@ eval 'exec /usr/bin/env perl  -S $0 ${1+"$@"}'
 
 use strict;
 use 5.006;
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 use Config;
 use Cwd ();
 use File::Spec ();
@@ -211,7 +211,7 @@ sub setup {
 }
 
 sub App::Rad::Help::usage {
-    return "Usage: ".basename($0)." [options] command [arguments]";
+  return "Usage: ".basename($0)." [options] command [arguments]";
 }
 
 sub pre_process {
@@ -350,6 +350,9 @@ sub App::Rad::_get_input {
     $c->debug('received command: ' . $c->{'cmd'});
     $c->debug('received parameters: ' . join (' ', @{$c->argv} ));
     @ARGV = @{$c->argv};
+    if (!$c->{'cmd'} and $c->options->{version}) {
+      return $c->version();
+    }
     return $c;
 }
 
@@ -1340,6 +1343,11 @@ INSTALL:
     push @c, "sudo" if $c->_older($p,'5.8.1') and $^O ne 'MSWin32';
     $c->_system1(@c);
   }
+  # make install for static extensions severely broken
+  if ($^O =~ /^MSWin32|cygwin/) {
+    $c->_system1($cp, 'lib/auto/Win32CORE/Win32CORE.a',
+		 "$root/inst-$p/usr/local/lib/perl5/$ps/$new/auto/Win32CORE/");
+  }
 
   # XXX on freebsd and windows there's no sudo. well in freebsd ports there is.
   # do we need sudo? check writable
@@ -1871,7 +1879,7 @@ sub _startvm {
 	if ($max and @running > $max) {
 	  my $r = shift @running;
 	  $c->_system1(qw(sudo virsh suspend), $r);
-	  push @{$c->stash->{vm}}, [$m,'stop'];
+	  push @{$c->stash->{vm}}, [$m,'shutdown'];
 	}
 	$c->_system1(qw(sudo virsh start), $m);
 	sleep 25;
@@ -1941,7 +1949,7 @@ VM Balancing:
     Currently only C<virsh> is supported to resume a paused vm and start 
     a stopped vm. C<--max> is yet ignored.
 
-    If C<testvm_ctl> is not set, no balancing - start+stop - will be done,
+    If C<testvm_ctl> is not set, no balancing - start+shutdown - will be done,
     such as on physical hosts or enough VM power.
     See F<.perlall>
 
