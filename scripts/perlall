@@ -25,7 +25,7 @@ eval 'exec /usr/bin/env perl  -S $0 ${1+"$@"}'
 
 use strict;
 use 5.006;
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 use Config;
 use Cwd ();
 use File::Spec ();
@@ -58,7 +58,7 @@ BEGIN { # check platform support: perldoc perlport
   _auto_use( @extuse );
 }
 # 5.8.4: ??, 5.8.5: centos4, 5.8.8: centos5
-our @main_releases = qw(5.6.2 5.8.4 5.8.5 5.8.8 5.8.9 5.10.1 5.12.4 5.14.2 5.15.6);
+our @main_releases = qw(5.6.2 5.8.4 5.8.5 5.8.8 5.8.9 5.10.1 5.12.4 5.14.2 5.15.7);
 
 push @App::Rad::ISA, 'main';
 our @opts = (
@@ -74,6 +74,7 @@ our @opts = (
 	  [ "nolog",    "skip writing log file(s)" ],
 	  [ "help|h",   "commands and options" ],
 	  [ "debug|d",  "lots of internal debugging output" ],
+          [ "gittag=s", "for the testvm logfile"],
 	  [ "version|V" ]);
 App::Rad->import ('debug') if grep /^-d$/, @ARGV;
 App::Rad->run();
@@ -106,7 +107,7 @@ perlall - build, test and do with all perls
 
     perlall testvm centos4 centos5 solaris10
     perlall initvm --all --max=6
-    perlall testvm --all -c=init # see testvm in .perlall
+    perlall testvm --all --fork -c=init # see testvm in .perlall
     perlall selfupgrade
 
 =head2 Planned Features
@@ -265,9 +266,9 @@ sub pre_process {
       $s = $s . $v;
       $s =~ s/[\s\(\)\[\}\[\]]//g;
       if ($^O eq 'cygwin') {
-	my $s = $d->{source}->{uname}->[2];
+	$s = $d->{source}->{uname}->[2];
 	$s =~ s/\(.+$//;
-	$s = 'cygwin'.$s;
+	$s = 'cygwin'.$s.'_'.$d->{source}->{uname}->[1]; # cygwin1.7.10s_winxp
       }
       $s = $^O unless $s;
       if ($cmd eq 'maketest') {
@@ -305,8 +306,14 @@ sub pre_process {
 sub App::Rad::addopts {
   my $c = shift;
   my $savopts = $c->options;
+  my @savargv = @ARGV;
+  if ($c->cmd =~ /^make|do/) {
+    $c->debug("pass options verbatim through");
+    @ARGV = ();
+  }
   $c->getopt( @_ );
   $c->options->{$_} = $savopts->{$_} for keys %$savopts; # merge with old opts
+  @ARGV = @savargv;
 }
 
 # only process opts before the command. 
@@ -684,7 +691,7 @@ sub _check_lock {
 	unlink $l;
       } else {
 	warn "Other perlall process $pid still running. perlall.lock kept\n";
-	warn `pgrep -Ll $pid`,"\n";
+	warn `ps -l -p $pid`,"\n";
 	# unlink $l;
       }
     }
@@ -695,6 +702,7 @@ sub _lognew {
   my $c = shift;
   my $p = shift;
   if ($p) {
+    $p = substr($p,0,-4) if $^O eq 'cygwin' and $p =~ /\.exe$/;
     $c->stash->{log} = $c->stash->{logprefix} . $p;
   } else {
     $c->stash->{log} = substr($c->stash->{logprefix},0,-1); # strip last -
@@ -907,16 +915,16 @@ sub build
   my $cwd = Cwd::getcwd();
   END { chdir $cwd if $cwd }
 
+  my $dryrun = $c->options->{dryrun};
   my $root = $c->config->{PERLALL_BUILDROOT};
   my $prefix = $c->config->{PERLALL_PREFIX};
   unless ($root) {
     $c->_fail("Empty PERLALL_BUILDROOT in .perlall");
   }
-  unless (-d $root) {
+  if (!-d $root and !$dryrun) {
     $c->_system1( "mkdir",$root) 
       and $c->_fail("Cannot create PERLALL_BUILDROOT $root");
   }
-  my $dryrun = $c->options->{dryrun};
   my $from = shift @args ; # might be empty
   my $ps = _numonly($p);
   # $ps =~ s/\-.+$//;
@@ -1173,17 +1181,19 @@ sub _build {
 	     or grep /^$f[= ]/, @{$c->options->{A}}
 	     or grep /^$f[= ]/, @{$c->options->{U}};
 	# -Dlibpth=/usr/local/lib64 /lib64 /usr/lib64 -D
-	my ($d,$v) = $tryargs =~ /-([AUD])$f=(.+?) -/; # until - or $
+	my ($d,$v) = $tryargs =~ /-([AUD])$f=(.+?) -[ADU]/; # Not until -L
 	if ($f =~ /^use/ and !$v) {
 	  my ($u) = $tryargs =~ /-([DU])$f /;
 	  $c->debug("-$u$f") if $u;
 	  push @conf, "-$u$f" if $u;
 	} elsif ($v and $d) {
+	  $v =~ s/([^\\]) /$1\\ /g;
 	  # There can be multiple -A$f=$v
 	  if ($d eq 'A') {
 	    my @v = ($tryargs =~ /-A$f=(.+?) /g);
 	    for my $v (@v) {
 	      $c->debug("-$d$f=$v") if $v;
+	      $v =~ s/([^\\]) /$1\\ /g;
 	      push @conf, "-$d$f='$v'";
 	    }
 	  } else {
@@ -1199,6 +1209,7 @@ sub _build {
 	      }
 	    }
 	    $c->debug("-$d$f=$v");
+	    $v =~ s/([^\\]) /$1\ /g;
 	    push @conf, "-$d$f='$v'";
 	  }
 	}
@@ -1206,6 +1217,10 @@ sub _build {
       $c->debug("merged config_args: ".join(" ",@conf));
       last;
     }
+  }
+  # https://www.socialtext.net/perl5/installing_perl_on_os_x
+  if ($ps =~ /^5\.6\.2/ and $^O =~ /darwin|bsd|dragon/) {
+    push @conf, "-Dd_Gconvert=sprintf";
   }
   # darwin: if -m32 or -m64 use -flat_namespace to avoid 2level
   if ($^O eq 'darwin') {
@@ -1215,6 +1230,11 @@ sub _build {
     # clang: use ld also
     # XXX: done automatically on linux. bother only for darwin
     push @conf, "-Dld=clang" if join(" ",@conf) =~ /-D'?cc='?clang'?/;
+
+    if ($c->_older($p,'5.6.2')) { # need to use 5.6.2 hints/darwin.sh
+      #open F,">hints/darwin.sh";
+      #close F;
+    }
   }
 
   $c->_system1( @conf);
@@ -1311,7 +1331,7 @@ sub _build {
     $c->_grep("-i print unless /<command-line>/", $makefile, "x2p/$makefile");
   }
 
-  $c->_system1( $make, @j); 
+  $c->_system1( $make, @j);
   if ($c->cmd eq 'smoke') {
     return $c->execute('_smoke', $p, $from, @j); # XXX not yet
   }
@@ -1339,6 +1359,9 @@ INSTALL:
     if ($c->_older($p,'5.8.1')) {
       warn("perl <= 5.8.0 needs to patch installperl: DESTDIR, versiononly w/ lib");
     }
+    if ($^O eq 'darwin' and $c->_older($p,'5.6.2')) {
+      $c->_system1('mv','INSTALL','INSTALL.txt');
+    }
     my @c = ($make, @j, "install", "DESTDIR=$root/inst-$p");
     push @c, "sudo" if $c->_older($p,'5.8.1') and $^O ne 'MSWin32';
     $c->_system1(@c);
@@ -1346,7 +1369,8 @@ INSTALL:
   # make install for static extensions severely broken
   if ($^O =~ /^MSWin32|cygwin/) {
     $c->_system1($cp, 'lib/auto/Win32CORE/Win32CORE.a',
-		 "$root/inst-$p/usr/local/lib/perl5/$ps/$new/auto/Win32CORE/");
+		 "$root/inst-$p/usr/local/lib/perl5/$ps/$new/auto/Win32CORE/")
+      if -e 'lib/auto/Win32CORE/Win32CORE.a';
   }
 
   # XXX on freebsd and windows there's no sudo. well in freebsd ports there is.
@@ -1356,7 +1380,9 @@ INSTALL:
     $sudo = "" if $sudo and -w "$prefix/bin/perl$p";
     unshift @c, $sudo if $sudo;
     $c->_system1( @c );
-
+    if ($^O =~ /^MSWin32|cygwin/) {
+      $c->_system1( "$cp $root/inst-$p/usr/local/bin/*.dll $prefix/bin/" );
+    }
     # symlink to symbolic name (blead, smoke-me, ...)
     if ($from eq 'blead' and $^O ne 'MSWin32') {
       my $s = $p;
@@ -1375,7 +1401,7 @@ INSTALL:
       # move back perl5.x
       $c->_system( 'mv', "$root/inst-$p/usr/local/perl$ps", "$root/inst-$p/usr/local/bin/perl$ps" );
     } else {
-      for (qw(cpan perldoc pod2man)) {
+      for (qw(cpan perldoc pod2man perlbug)) {
 	my @c = ($cp, "$root/inst-$p/usr/local/bin/$_$ps","$prefix/bin/");
 	unshift @c, $sudo if $sudo;
 	$c->_system1( @c );
@@ -1583,6 +1609,7 @@ For example, run a Hello program:
 is expanded to something like:
 
   for perl in /usr/local/bin/perl5*; do
+    p=$perl
     echo $perl $*
     $perl $*
   done
@@ -1594,8 +1621,9 @@ Better restricts perls via ENV:
 is expanded to something like:
 
   for perl in /usr/local/bin/perl5.14.*d*; do
-    echo $perl $*
-    $perl $*
+    p=$perl
+    echo $p $*
+    $p $*
   done
 
 The output depends on your perl installations, and looks like this:
@@ -1631,10 +1659,12 @@ sub do
   my $c = shift;
   my $argv = join " ",@{$c->argv};
   return "missing args" unless $argv;
+  $c->addopts( "verbose|v", "quiet|q", "dryrun!", 'forked', "gittag=s" );
   $c->options->{verbose} = 1 unless $c->options->{quiet};
   for my $p (@{$c->stash->{perlall}}) {
     $c->_lognew(_short($p));
-    $c->_system0( "$p @{$c->argv}");
+    local $ENV{p} = $p;
+    $c->_system0( "$p $argv");
   }
   $c->_set_alias() if @{$c->stash->{perlall}} < 5;
 }
@@ -1679,12 +1709,22 @@ sub cpanm
   $c->_set_alias() if @{$c->stash->{perlall}} < 5;
 }
 
+sub _gitoneliner {
+  my $c = shift;
+  return $c->options->{gittag} if $c->options->{gittag};
+  -d '.svn' ? `svn info t | grep Revision`
+    : (-d '.git' ? `git log --oneline -1` : '');
+}
+
 =item B<make> [commands...]
 
-like C<perlall do>, but prepends C<make -s clean; $perl Makefile.PL; make> 
+like C<perlall do>, but prepends C<make -s clean; $p Makefile.PL; make> 
 before executing the arguments.
+C<$p> is expanded to the currently run perl.
 
 Also is Build.PL aware but prefers Makefile.PL.
+
+    perlall make '-e1 && valgrind \$p -Mblib test.pl'
 
 =cut
 
@@ -1713,15 +1753,20 @@ sub make
   my $c = shift;
   my $argv = join " ",@{$c->argv};
   my $make = $Config{make};
+  $c->addopts( "verbose|v", "quiet|q", "dryrun!", 'forked', "gittag=s" );
+  my $gitshort = $c->_gitoneliner();
   my $v = $c->options->{verbose};
   for my $p (@{$c->stash->{perlall}}) {
+    $c->_lognew(_short($p));
+    my $fh = $c->stash->{log_fh};
+    print $fh $gitshort if $fh and $gitshort;
     local $c->options->{verbose} = $v;
-    undef $c->stash->{log_fh};
+    # undef $c->stash->{log_fh};
     $c->_make( $p);
     if ($argv) { # preserves quotes as in -e'my $a;'
       $c->options->{verbose} = 1 unless $c->options->{quiet};
-      # $c->_lognew(_short($p));
-      $c->_system0( "$p $argv");
+      local $ENV{p} = $p;
+      $c->_system0( "$p $argv" );
     }
   }
   $c->_set_alias() if @{$c->stash->{perlall}} < 5;
@@ -1741,16 +1786,12 @@ sub maketest
 {
   my $c = shift;
   my $make = $Config{make};
-  $c->addopts( "verbose|v", "quiet|q", "dryrun!", 'forked' );
-  my $gitshort;
-  $gitshort = `svn info t | grep Revision` if -d '.svn';
-  $gitshort = `git log --oneline -1` if -d '.git';
+  $c->addopts( "verbose|v", "quiet|q", "dryrun!", 'forked', "gittag=s" );
+  my $gitshort = $c->_gitoneliner();
   for my $p (@{$c->stash->{perlall}}) {
     $c->_lognew(_short($p));
     my $fh = $c->stash->{log_fh};
-    if ($fh and $gitshort) {
-      print $fh $gitshort;
-    }
+    print $fh $gitshort if $fh and $gitshort;
     $c->_make($p);
     my @opts = ("test", $c->options->{quiet} ? () : "TEST_VERBOSE=1");
     unshift @opts,"-j".$c->options->{j} 
@@ -1762,12 +1803,12 @@ sub maketest
     }
     unless ($c->options->{verbose}) {
       my $log = $c->stash->{log};
-      my $result = `grep Result: $log`;
+      my $result = `grep -a Result: $log`;
       $c->_log(0, $result) if $result;
     }
     if (@{$c->argv}) {
       # optionally additional tests
-      $c->_system0( $p, @{$c->argv});
+      $c->_system0( "p=$p $p @{$c->argv}");
     }
     if (-d '.svn' and $fh) {
       print $fh `svn info t | grep Revision`;
@@ -1797,11 +1838,15 @@ sub makeinstall
   $c->addopts( "force|f", "notest|n" );
   # XXX check CPAN/MyConfig.pm for sudo
   #warn "additional arguments @{$c->argv} ignored\n" if @{$c->argv};
+  my $gitshort = $c->_gitoneliner();
   my $sudo = $c->config->{sudo};
   my $v = $c->options->{verbose};
   for my $p (@{$c->stash->{perlall}}) {
+    $c->_lognew(_short($p));
     local $c->options->{verbose} = $v;
-    undef $c->stash->{log_fh};
+    my $fh = $c->stash->{log_fh};
+    print $fh $gitshort if $fh and $gitshort;
+    # undef $c->stash->{log_fh};
     $c->_make($p);
     my $instcmd = "$sudo $make install";
     if ($c->options->{notest}) {
@@ -1817,6 +1862,7 @@ sub makeinstall
     }
     if (@{$c->argv}) {
       # optionally additional tests
+      local $ENV{p} = $p;
       $c->_system0( $p, @{$c->argv} );
     }
   }
@@ -2011,9 +2057,12 @@ sub testvm
     $base = File::Spec->catdir($vmprefix, basename(Cwd::getcwd()));
   }
   my $msg = "done";
-  my $remotecmd = "cd $base && perlall$gopts $cmd$opt";
+  my $remotecmd = "cd $base && touch Makefile.PL && perlall$gopts $cmd$opt";
   my $up = $c->options->{up};
   my $do_fork = $c->options->{fork} and IPC::Cmd->can_use_run_forked();
+  my $gitshort = $c->_gitoneliner();
+  my $fh = $c->stash->{log_fh};
+  print $fh $gitshort if $fh and $gitshort;
   my @forked;
   for my $m (@machines) {
     $c->_startvm($m) or next;
@@ -2025,8 +2074,12 @@ sub testvm
     unless ( $up ) {
       # my $buf = ' 'x10000;
       my $logglob = $cmd eq 'maketest' ? "log.test-*" : "log.$cmd-*";
+      if ($gitshort and $remotecmd != /--gittag/) {
+	my ($commit) = split / /, $gitshort;
+	$remotecmd .= " --gittag=$commit";
+      }
       if ($do_fork) { # run cmds in parallel
-	$remotecmd .= ' --forked' if $cmd = 'maketest';
+	$remotecmd .= ' --forked' if $cmd = 'maketest' and $cmd !~ /--forked/;
 	my @cmd = ("sh","-c",
 		   "if ssh $m '$remotecmd'; then rsync -avz $m:$base/$logglob .; fi");
         # if virsh was resumed, pause it back afterwards
