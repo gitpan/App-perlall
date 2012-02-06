@@ -1,5 +1,22 @@
 -*- change-log -*-
 
+0.06	2012-02-06 rurban
+	added cygwin and partial win32 support, win32 build not yet
+	* do not overwrite old logfiles, backup numbered
+	* build: use config vars from .perlall for building new perls: prefix, bindir
+	* build: check for -thread in archname, wrong hints overrides
+	* build: install static_ext which is broken in perl
+	* build: add DLLNAME fix on cygwin
+	* build: add LLIBPERL fix on cygwin (It was not me, who did this. I fixed it in 5.10)
+	* build: fix post-configure on cygwin, -i print missing
+	* build: patch installperl for custom perldll on cygwin
+	* build --install: support PERLALL_BINDIR
+	* fixed printing do and make results even with -q
+	* help with quoting issues on win32, convert ' to "
+	* INSTALL: added INSTALL instructions for root, sudo and non-sudo
+	* .perlall: add perlall_timeout and more aliases
+	* config: new command
+
 0.05	2012-01-31 rurban
 	* fix pgrep command to list the running perlall.lock process
 	* pass --gittag to testvm for their logfiles without .git
