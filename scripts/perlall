@@ -4,6 +4,7 @@ eval 'exec /usr/bin/env perl  -S $0 ${1+"$@"}'
 
 #BEGIN {$DB::single=1} # debug into attribute handling
 # TODO:
+#   maketest or -q: mark FAIL tests *RED*, p line bold black (see t/testc.sh)
 #   implement smoke, bench
 #   maketest --all (locally and testvm --all)
 #   more testvm_ctl: xen-shell, vmrun, VBoXManage
@@ -12,6 +13,7 @@ eval 'exec /usr/bin/env perl  -S $0 ${1+"$@"}'
 #   cmd --help
 #   get msys compiled, bootstrap a mingw perl without strawberry
 #   build win32 from win32/
+#   -v --help fails on some machines, broken Pod::Usage
 # TEST:
 #   tee with -v
 #   testvm logs back from forks
@@ -28,7 +30,7 @@ eval 'exec /usr/bin/env perl  -S $0 ${1+"$@"}'
 
 use strict;
 use 5.006;
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 use Config;
 use Cwd ();
 use File::Spec ();
@@ -61,7 +63,7 @@ BEGIN { # check platform support: perldoc perlport
   _auto_use( @extuse );
 }
 # 5.8.4: ??, 5.8.5: centos4, 5.8.8: centos5
-our @main_releases = qw(5.6.2 5.8.4 5.8.5 5.8.8 5.8.9 5.10.1 5.12.4 5.14.2 5.15.7);
+our @main_releases = qw(5.6.2 5.8.4 5.8.5 5.8.8 5.8.9 5.10.1 5.12.4 5.14.2 5.15.8);
 
 push @App::Rad::ISA, 'main';
 our @opts = (
@@ -119,8 +121,8 @@ perlall - build, test and do with all perls
 
     perlall maketest --all
     perlall smoke -j4 bleadd-nt smoke-me/*
-    perlall bench [ what  [ how ]]
-    perlall cpan Devel::*
+    perlall=5*[0-9]-nt perlall bench [ what  [ how ]]
+    perlall cpan Devel::*Prof*
 
 =head1 OPTIONS
 
@@ -190,7 +192,7 @@ Version numbers look like C<5.xx.x> and the perl C<suffix> can be any of:
 
     C<d>    DEBUGGING
     C<-nt>  non-threaded, or
-    C<-m>   multi
+    C<-m>   multi (non-threaded)
     C<@xxxxxx> git ids / branch names
 
 You want to switch to use the "thr" suffix, then the default
@@ -230,6 +232,7 @@ But easier is:
     perlall do '-e"print $^O"'
 
 =cut
+
 
 sub setup {
   $_[0]->register_commands( {-ignore_prefix => '_'} );
@@ -391,7 +394,8 @@ sub App::Rad::_get_input {
     $parser->configure( qw(bundling) );
     @ARGV = @options; # getoptions eats @ARGV
     my $ret = $parser->getoptions($c->{'_options'}, map {$_->[0]} @opts);
-    $c->options->{timeout} = $c->config->{perlall_timwout} unless exists $c->options->{timeout};
+    $c->options->{timeout} = $c->config->{perlall_timeout} unless exists $c->options->{timeout};
+    delete $c->options->{timeout} unless $c->options->{timeout};
     $c->debug('received options: ' . join(' ',@options) . ' => '
 	      . _opts($c->options));
     $c->debug('received command: ' . $c->{'cmd'});
@@ -1127,8 +1131,9 @@ sub _build {
   my $srcdir = $c->config->{'perl-git'};
   my ($suffix) = $p =~ /5\.\d\d?\.\d\d?(.+)$/;
   my $debug = substr($suffix,0,1) eq 'd';
-  my $ithreads = $suffix !~ /^d?-nt/;
   my $multi = $suffix =~ /^d?-m/;
+  my $ithreads = $suffix !~ /^d?-nt/;
+  $ithreads = undef if $multi;
   my $bindir = $c->config->{PERLALL_BINDIR};
 
   # assert $p = $ps . $suffix;
@@ -1237,7 +1242,7 @@ sub _build {
   # we cannot force archname, because we don't know the resulting name yet
   # we fix that post-configure
   my ($libperl);
-  if ($c->config->{usethrsuffix}) {
+  if ($c->config->{usethrsuffix} and !$multi) {
     $ithreads = $suffix =~ /^d?thr/; # perl5.14.2dthr
   }
   push @conf, "-Dmksymlinks" if $srcdir ne ".";
@@ -1269,8 +1274,9 @@ sub _build {
   }
   $c->_system( $rm, "config.sh") if -f "config.sh";
   $c->debug("config_args: ".join(" ",@conf));
-  for my $tryperl ("$bindir/bin/perl", "/usr/bin/perl") {
+  for my $tryperl ("$bindir/perl", "/usr/local/bin/perl", "/usr/bin/perl") {
     if (-e $tryperl) { # use tryperl as template and merge options
+      # same overrides as with tryperl
       my $tryargs = `$tryperl -V:config_args`;
       $c->debug("old args: $tryargs");
       for my $f (qw(cc ld ccflags ldflags libpth incpth pager
@@ -1280,7 +1286,8 @@ sub _build {
 	     or grep /^$f[= ]/, @{$c->options->{A}}
 	     or grep /^$f[= ]/, @{$c->options->{U}};
 	# -Dlibpth=/usr/local/lib64 /lib64 /usr/lib64 -D
-	my ($d,$v) = $tryargs =~ /-([AUD])$f=(.+?) -[ADU]/; # Not until -L
+	my ($d,$v) = $tryargs =~ /-([AUD])$f=(.+?) (-[ADU]|;)/; # Not until -L
+	# check the
 	if ($f =~ /^use/ and !$v) {
 	  my ($u) = $tryargs =~ /-([DU])$f /;
 	  $c->debug("-$u$f") if $u;
@@ -1289,7 +1296,7 @@ sub _build {
 	  $v =~ s/([^\\]) /$1\\ /g;
 	  # There can be multiple -A$f=$v
 	  if ($d eq 'A') {
-	    my @v = ($tryargs =~ /-A$f=(.+?) /g);
+	    my @v = ($tryargs =~ /-A$f=(.+?) (-[ADU]|;)/g);
 	    for my $v (@v) {
 	      $c->debug("-$d$f=$v") if $v;
 	      $v =~ s/([^\\]) /$1\\ /g;
@@ -1373,7 +1380,8 @@ sub _build {
   if (($new ne $archname) or $gitsuffix or $debug) {
     if ($new eq $archname) {
       $new .= "-debug" if $debug and $archname !~ /-debug/;
-      $new .= $gitsuffix if $gitsuffix  and $archname !~ /$gitsuffix$/;
+      $new .= $gitsuffix if $gitsuffix and $archname !~ /$gitsuffix$/
+	and $gitsuffix ne '-m';
       if (!$ithreads and $new =~ /-thread/) {
 	$new =~ s/-thread//;
       } elsif ($ithreads and $new !~ /-thread/) {
@@ -1557,8 +1565,7 @@ EOP
     }
 
     my @c = ($make, @j, "install", "DESTDIR=$root/inst-$p");
-    $sudo = "" if $sudo and -w "$root";
-    unshift @c, $sudo if $c->_older($p,'5.8.1') and $^O ne 'MSWin32';
+    unshift @c, $sudo if $sudo and (!-w "$root" or $c->_older($p,'5.8.1'));
     $c->_system1(@c);
   }
   # make install for static extensions severely broken
@@ -1580,8 +1587,7 @@ EOP
   }
   elsif (-f "$root/inst-$p$prefix/bin/perl$ps") {
     my @c = ($cp, "$root/inst-$p$prefix/bin/perl$ps","$bindir/perl$p");
-    $sudo = "" if $sudo and -w "$bindir/perl$p";
-    unshift @c, $sudo if $sudo;
+    unshift @c, $sudo if $sudo and !-w "$bindir/perl$p";
     $c->_system1( @c );
     if ($^O =~ /^MSWin32|cygwin/) {
       $c->_system1( "$cp $root/inst-$p$prefix/bin/*.dll $bindir/" );
@@ -1591,29 +1597,27 @@ EOP
       my $s = $p;
       $s =~ s/\@.*//;
       my @c = ('ln', '-sf', "$bindir/perl$p", "$bindir/perl$s\@blead");
-      $sudo = "" if $sudo and -w "$bindir/perl$p";
-      unshift @c, $sudo if $sudo;
+      unshift @c, $sudo if $sudo and !-w "$bindir/perl$p";
       $c->_system( @c );
 
       # move away perl5.x
       $c->_system( 'mv', "$root/inst-$p$prefix/bin/perl$ps", "$root/inst-$p$prefix/perl$ps" );
       # copy all versioned tools
       @c = ($cp, "$root/inst-$p$prefix/bin/*", "$bindir/");
-      unshift @c, $sudo if $sudo;
+      unshift @c, $sudo if $sudo and !-w "$bindir/perl$p";
       $c->_system( @c );
       # move back perl5.x
       $c->_system( 'mv', "$root/inst-$p$prefix/perl$ps", "$root/inst-$p$prefix/bin/perl$ps" );
     } else {
       for (qw(cpan perldoc pod2man perlbug)) {
 	my @c = ($cp, "$root/inst-$p$prefix/bin/$_$ps","$bindir/");
-	unshift @c, $sudo if $sudo;
+	unshift @c, $sudo if $sudo and !-w "$bindir/perl$p";
 	$c->_system1( @c );
       }
     }
 
     @c = ($cp, "-r", "$root/inst-$p$prefix/lib", "$prefix/");
-    # $sudo = "" if $sudo and -w "$prefix/lib/perl5/$ps"; #wrong
-    unshift @c, $sudo if $sudo;
+    unshift @c, $sudo if $sudo and !-w "$prefix/lib/perl5/$ps";
     $c->_system1( @c );
 
     if (!$testerr and $srcdir eq "." and -d '.git') {
@@ -1637,7 +1641,7 @@ Same as build
 
 =item B<uninstall> perl<version><suffix>
 
-Uninstalls the given version.
+Uninstalls the given version(s).
 
 =cut
 
@@ -1646,31 +1650,32 @@ sub uninstall
   :Help('sudo rm /usr/local/bin/perl<arg> and its archlibs')
 {
   my $c = shift;
-  #my @argv = @{$c->argv};
-  my $p = shift @{$c->stash->{perlall}};
-  my $bindir = $c->config->{PERLALL_BINDIR};
-  $bindir = "/usr/local/bin" unless $bindir;
-  $c->_fail("$bindir/$p does not exist") unless -e "$bindir/$p";
-  my $pq = $p;
-  $pq =~ s/([\@\$\%])/\\$1/;
+  for my $p (@{$c->stash->{perlall}}) {
+    my $bindir = $c->config->{PERLALL_BINDIR};
+    $bindir = "/usr/local/bin" unless $bindir;
+    $p = basename($p);
+    $c->_fail("$bindir/$p does not exist") unless -e "$bindir/$p";
+    my $pq = $p;
+    $pq =~ s/([\@\$\%])/\\$1/;
 
-  my $archlib = `$bindir/$pq -MConfig -e'print \$Config{archlibexp}'`;
-  $archlib = `$bindir/$pq -MConfig -e'print \$Config{archlib}'` unless $archlib;
-  my $sitearch = `$bindir/$pq -MConfig -e'print \$Config{sitearchexp}'`; # may be empty
-  if ($c->options->{dryrun} or (-f "$bindir/$p" and -d $archlib)) {
-    $c->_system0("sudo","rm","-rf", "$bindir/$p", $archlib, $sitearch);
-  } else {
-    $c->_fail("$p archlib $archlib did not exist");
+    my $archlib = `$bindir/$pq -MConfig -e'print \$Config{archlibexp}'`;
+    $archlib = `$bindir/$pq -MConfig -e'print \$Config{archlib}'` unless $archlib;
+    my $sitearch = `$bindir/$pq -MConfig -e'print \$Config{sitearchexp}'`; # may be empty
+    if ($c->options->{dryrun} or (-f "$bindir/$p" and -d $archlib)) {
+      $c->_system0("sudo","rm","-rf", "$bindir/$p", $archlib, $sitearch);
+    } else {
+      $c->_fail("$p archlib $archlib did not exist");
+    }
+    my $root = $c->config->{PERLALL_BUILDROOT};
+    if (-d "$root/inst-$p") {
+      $c->_system1("rm","-rf","$root/inst-$p");
+    }
+    # XXX ask
+    if (-d "$root/build-$p") {
+      $c->_log("rm","-rf","$root/build-$p");
+    }
+    print "perl$p uninstalled\n";
   }
-  my $root = $c->config->{PERLALL_BUILDROOT};
-  if (-d "$root/inst-$p") {
-    $c->_system1("rm","-rf","$root/inst-$p");
-  }
-  # XXX ask
-  if (-d "$root/build-$p") {
-    $c->_log("rm","-rf","$root/build-$p");
-  }
-  "perl$p uninstalled"
 }
 
 =item B<smoke> [OPTIONS] perl<version><suffix> [ branch|from ]
@@ -2038,7 +2043,7 @@ sub maketest
     my $fh = $c->stash->{log_fh};
     print $fh $gitshort if $fh and $gitshort;
     $c->_make($p);
-    my @opts = ("test", $c->options->{quiet} ? () : "TEST_VERBOSE=1");
+    my @opts = ("test", $c->options->{verbose} ? "TEST_VERBOSE=1" : ());
     unshift @opts,"-j".$c->options->{j}
       if $c->options->{j} and !$c->_older( $p,"5.10.0");
     if (!-f "Makefile" and -f "Build") {
@@ -2288,6 +2293,8 @@ sub testvm
     $c->_log(1,"Creating $f");
     open M,'<',$man; open F,'>',$f;
     while (<M>) {
+      s/ +$//;
+      s/^(\S+)(\s+.+)$/$1/;
       print F $_ unless /^#/;
     }
     close M; close F;
@@ -2588,9 +2595,8 @@ See L</testvm>.
 The bash scripts, which I used for some years:
 L<http://github.com/rurban/dot-bin/blob/master/perlall-makeinstall>
 
-L<App::perlbrew> which looked like my bash scripts and B<perlall>,
-but pollutes PERL5LIB and thus your whole environment, similar to
-the horrible Oracle perl.
+L<App::perlbrew> which is good for complete private unshared installations.
+It looked like my bash scripts and B<perlall>, but cannot be used as easily.
 
 L<App::SmokeBrew> which also builds a lot of perls to smoke cpan
 releases with them.
