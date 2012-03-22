@@ -18,5 +18,6 @@ t/07-help.t
 t/08-version.t
 t/release-pod-coverage.t
 t/release-pod-syntax.t
-META.yml                                 Module meta-data (added by MakeMaker)
+META.yml                                 Module YAML meta-data (added by MakeMaker)
+META.json                                Module JSON meta-data (added by MakeMaker)
 SIGNATURE                                Public-key signature (added by MakeMaker)
