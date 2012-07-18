@@ -49,7 +49,7 @@
          }
       }
    },
-   "release_status" : "stable",
+   "release_status" : "testing",
    "resources" : {
       "license" : [
          "http://dev.perl.org/licenses/"
@@ -58,5 +58,5 @@
          "url" : "git://github.com/rurban/App-perlall.git"
       }
    },
-   "version" : "0.15"
+   "version" : "0.15_01"
 }
