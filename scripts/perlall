@@ -14,7 +14,10 @@ eval 'exec /usr/bin/env perl  -S $0 ${1+"$@"}'
 #   get msys compiled, bootstrap a mingw perl without strawberry
 #   build win32 from win32/
 #   -v --help fails on some machines, broken Pod::Usage
+#   detect -asan suffix
+#   set (store alias p in .perlall, for scripts)
 # TEST:
+#   new versiononly logic
 #   init-modules: \ handling and `` expansion
 #   testvm logs back from forks
 #   fix testvm forked and --fork arg
@@ -30,7 +33,7 @@ eval 'exec /usr/bin/env perl  -S $0 ${1+"$@"}'
 
 use strict;
 use 5.006;
-our $VERSION = '0.17';
+our $VERSION = '0.18';
 use Config;
 use Cwd ();
 use File::Spec ();
@@ -46,8 +49,8 @@ BEGIN { # check platform support: perldoc perlport
     } elsif ($^O =~ /^MSWin32|msys/) {
       warn "$^O not yet fully supported\n";
     } else { # should theoretically work:
-             #        netbsd sunos aix haiku hpux irix next svr4 unicos* plan9
-             # scary: VOS os390 os400 posix-bc vmesa riscos amigaos beos mpeix
+             #   netbsd sunos aix haiku beos hpux irix next svr4 unicos* plan9
+             # scary: VOS os390 os400 posix-bc vmesa riscos amigaos mpeix
       warn "untested OS $^O. Feedback welcome";
       # VOS forbids slashes in filenames. no big deal
     }
@@ -102,6 +105,7 @@ perlall - build, test and do with all perls
     perlall uninstall perl5.15.4d-nt@khw-tk
 
     perlall init perl5.15.4d-nt@blead DBI CPAN::SQLite $(cat ~/Perl/B-C/t/top100)
+    perlall set perl5.16.2d
 
     perlall="5.1*" perlall do -MData::Dumper -e'my $a;$b={1=>\$a};$a=\$b;print Dumper($b)'
     perlall --older 5.12 make -Mblib t/0basic.t
@@ -949,7 +953,7 @@ via CPAN. (not yet)
 C<man> files are not installed. This is the job for the default
 /usr/local/bin/perl or /usr/bin/perl.
 
-C<-Dusedevel> is always used to install versioned executables.
+C<-Dusedevel -Uversiononly> is always used to install versioned executables.
 
 Special site-specific non-default config vars are taken from
 F</usr/local/bin/perl>, such as C<cf_email, perladmin, ccflags, cc,
@@ -1280,7 +1284,7 @@ sub _build {
 
   # prepare configure options, dependent on options and $p
   my @conf = ("sh","$srcdir/Configure","-de","-Dusedevel",
-	      #"-Uversiononly",
+	      "-Uversiononly",
 	      "-Dinstallman1dir=none","-Dinstallman3dir=none",
 	      "-Dinstallsiteman1dir=none","-Dinstallsiteman3dir=none");
   # we cannot force archname, because we don't know the resulting name yet
@@ -1321,7 +1325,7 @@ sub _build {
   if (grep /-[DA]'ccflags=.*-faddress-sanitizer/, @conf) {
     my $f = 'ldflags';
     push @conf, "-A$f=-faddress-sanitizer" if !(grep /-[DA]'$f=.*-faddress-sanitizer/, @conf);
-    my $f = 'lddlflags';
+    $f = 'lddlflags';
     push @conf, ("-A$f='-shared\\ -faddress-sanitizer'","-Duseshrplib")
       if !(grep /-[DA]'$f=.*-faddress-sanitizer/, @conf)
       and !(grep /-U'?useshrplib/, @conf);
@@ -1393,7 +1397,9 @@ sub _build {
     push @conf, "-Dlibc=/usr/lib.libmsys-1.0.dll.a", "-Dusenm=no";
   }
   if (join(" ",@conf) =~ /-D'?cc='?clang'?/) { # our macros are just too bad
+    #if (grep /^-[DA]ccflags/, @conf) {
     push @conf, "-Accflags=-Wno-unused-value"; # this belongs into Configure
+    #}
   }
 
   if ($^O ne 'MSWin32') {
@@ -1550,6 +1556,14 @@ sub _build {
     $c->_system1("chdir","..");
   } else {
     $c->_system1( $make, @j);
+  }
+
+  $c->debug("post-make versiononly");
+  # TODO: need to install pureperl libs,
+  # but also version the executables
+  if (!grep /^-Uversiononly/, @{$c->options->{U}}) {
+      $c->_grep("-i s/versiononly='undef'/versiononly='define'/; print",
+		"config.sh", 'lib/Config_heavy.pl');
   }
 
   if ($c->cmd eq 'smoke') {
@@ -1806,7 +1820,8 @@ sub init
     $mods =~ s/`(.+?)`/$sh/;
   }
   if ($c->options->{deps}) {
-    $mods = `'ack -ho '(^\s*|\{\s*)(use|require) ([\w:]+);' blib/lib t | perl -lpe's/^\s*(\{|;|use|require)\s*//g;s/;?\s*\$//;' | sort -u'`;
+    my $ack = q(ack -ho '(^\s*|\{\s*)(use|require) ([\w:]+);' blib/lib t | perl -lpe's/^\s*(\{|;|use|require)\s*//g;s/;?\s*\$//;' | sort -u);
+    $mods = `$ack`;
     $mods = join(" ",split(/\n/, $mods));
     return "no --deps found" unless $mods;
   }
@@ -1866,6 +1881,22 @@ sub list
   my $c = shift;
   warn "additional arguments @{$c->argv} ignored\n" if @{$c->argv};
   return join "\n", @{$c->stash->{perlall}};
+}
+
+=item B<set> version
+
+Set alias p in .perlall
+
+=cut
+
+sub set
+  :Help('Set alias p in .perlall')
+{
+  my $c = shift;
+  my $p = pop @{$c->argv};
+  warn "additional arguments @{$c->argv} ignored\n" if @{$c->argv};
+  $c->_set_alias($p);
+  return;
 }
 
 =item B<do> [<version>] commands...
