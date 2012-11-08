@@ -1,5 +1,5 @@
 This file contains message digests of all files listed in MANIFEST,
-signed via the Module::Signature module, version 0.69.
+signed via the Module::Signature module, version 0.68.
 
 To verify the content in this distribution, first make sure you have
 Module::Signature installed, then type:
@@ -15,18 +15,18 @@ not run its Makefile.PL or Build.PL.
 Hash: SHA1
 
 SHA1 0bfd1f8d2e9726bcba702674f51340f007fad2ad .perlall
-SHA1 a4d74aed8c51b4aa3672e0535ebea31658f1c940 Changes
+SHA1 62f7f45342ed43ba27125ef007ad6d1cb47fe7a1 Changes
 SHA1 f2d4288cc271552848c5f4c84bea8ed656b2fb6f INSTALL
 SHA1 012fe1ce01fb53ea10dfac7145ee7217b8b3ae85 LICENSE
 SHA1 e88d5cb5972200f54e3d6c3fda9c2a2f1dc83f73 MANIFEST
-SHA1 fdd9717e35534a13709d86546729c8b49d7eb185 META.json
-SHA1 17e5d14e664ae2663e33685d91ad924fdec0db7c META.yml
+SHA1 165b73cf1c1f0e369fdc69857d4239d7a142c64a META.json
+SHA1 895cb78deb656e587378e0ed363df73f98eb386d META.yml
 SHA1 999ba67f1f162dcb3edb6b6b096c9c4ea2740bab Makefile.PL
 SHA1 649be70c8d47f61b39ce0df51570db8efa7f7ee0 README
 SHA1 abdcb9217c9710bbf9ccb6f17d11198b7b465e5e lib/App/perlall.pm
 SHA1 28f5f6d947bc96954450579439fbcda8a1efd726 perlall.ppt
 SHA1 5548d91cfff2b294741507c0c3607d8bb39a0982 perlall.txt
-SHA1 afcfc86a22ba5e789b198f5ca362f73039f6ff47 scripts/perlall
+SHA1 3112b5740fd3eb43fb1a627ec715a0a2a3a3c723 scripts/perlall
 SHA1 d90d4c1194ca8fd04915b2a2180078b57f945007 t/00-compile.t
 SHA1 a79f2435af8bc9b8769f07de90e3f7475e7ba606 t/01-build.t
 SHA1 75b72976603549d01705cc9524590198e9fd62fc t/01-linked.t
@@ -43,7 +43,7 @@ SHA1 7b8ee119c61c78aec82ea1c1ab9071a7086a3c0a t/release-pod-syntax.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.12 (GNU/Linux)
 
-iEYEARECAAYFAlCb1KcACgkQmm2SYo/9yUIJowCePGZns+JHZyE2BpH2tdwmFbcf
-pWUAn05ZhX+w6A7xqdDvLIhnqAQfGubq
-=YLUy
+iEYEARECAAYFAlCb/2YACgkQmm2SYo/9yULrZgCffiZfBmOysYAKq6Aq9VV4hK1n
+PXUAn0JHYshF6oJiOFT16W9RSbdxtnWB
+=Ay1x
 -----END PGP SIGNATURE-----
