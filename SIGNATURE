@@ -1,5 +1,5 @@
 This file contains message digests of all files listed in MANIFEST,
-signed via the Module::Signature module, version 0.68.
+signed via the Module::Signature module, version 0.70.
 
 To verify the content in this distribution, first make sure you have
 Module::Signature installed, then type:
@@ -15,19 +15,19 @@ not run its Makefile.PL or Build.PL.
 Hash: SHA1
 
 SHA1 0bfd1f8d2e9726bcba702674f51340f007fad2ad .perlall
-SHA1 47285a846e6cf146f2a1bce5eecc6e1744878097 Changes
+SHA1 0263ba72224eed699595285fa8938e407bee7935 Changes
 SHA1 f9a303bd5a40f5485cd5dbbc925e3a4ce4b028d5 INSTALL
 SHA1 012fe1ce01fb53ea10dfac7145ee7217b8b3ae85 LICENSE
 SHA1 c78caa923229239b7e87c5e374673b256fe3764c MANIFEST
-SHA1 902848c357a4271a78595071eefdf29915c0b941 META.json
-SHA1 8de26f97a5d1e265ada93688e0b386be06644028 META.yml
+SHA1 e7aa2e3cc07f0ceb7d972b33abaa3a86f818e388 META.json
+SHA1 dd758e8c694458b6c7e00216da0cb3db44ccbc05 META.yml
 SHA1 d39947d5cfe75b7bcd62b19eead116df443fe47e Makefile.PL
 SHA1 649be70c8d47f61b39ce0df51570db8efa7f7ee0 README
 SHA1 abdcb9217c9710bbf9ccb6f17d11198b7b465e5e lib/App/perlall.pm
-SHA1 79e0d00e8f4bd2799db6939466c84df0f66a6764 lib/Devel/PatchPerl/Plugin/Asan.pm
+SHA1 8917d19837ddd5b2ad5cc94961336d93a824160d lib/Devel/PatchPerl/Plugin/Asan.pm
 SHA1 28f5f6d947bc96954450579439fbcda8a1efd726 perlall.ppt
 SHA1 5548d91cfff2b294741507c0c3607d8bb39a0982 perlall.txt
-SHA1 317ef04864311f90511d011dc23e6ada3379c732 script/perlall
+SHA1 f9230ce34a559247bf6b5b35368d32a01947d120 script/perlall
 SHA1 d90d4c1194ca8fd04915b2a2180078b57f945007 t/00-compile.t
 SHA1 1bffbbb6335975580195dbf0949f108808050f21 t/01-build.t
 SHA1 f31e2ebf44e7ffc20066d7415f6a80172ee3c511 t/01-linked.t
@@ -44,7 +44,7 @@ SHA1 7b8ee119c61c78aec82ea1c1ab9071a7086a3c0a t/release-pod-syntax.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.12 (GNU/Linux)
 
-iEYEARECAAYFAlClF5UACgkQmm2SYo/9yUKC5ACgjRDG8O6Fq7AS6NLc+U2afwkc
-Y2MAnArNa3x/MuLGdxlmBAyRhmwRGTJT
-=2NTN
+iEYEARECAAYFAlDKNXwACgkQmm2SYo/9yUIjXQCfUuHOkeVQ3VJd26QxR3JD3uGn
+gYQAniFRLdWZYH3rH42PW9ZlZi/bPu9Y
+=4doe
 -----END PGP SIGNATURE-----
