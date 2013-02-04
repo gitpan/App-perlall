@@ -17,6 +17,9 @@
       "directory" : [
          "t",
          "inc"
+      ],
+      "package" : [
+         "B"
       ]
    },
    "prereqs" : {
@@ -58,5 +61,5 @@
          "url" : "git://github.com/rurban/App-perlall.git"
       }
    },
-   "version" : "0.30"
+   "version" : "0.31"
 }

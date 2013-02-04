@@ -17,6 +17,8 @@ no_index:
   directory:
     - t
     - inc
+  package:
+    - B
 recommends:
   File::Slurp: 9999.13
 requires:
@@ -34,4 +36,4 @@ requires:
 resources:
   license: http://dev.perl.org/licenses/
   repository: git://github.com/rurban/App-perlall.git
-version: 0.30
+version: 0.31
