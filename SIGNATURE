@@ -1,5 +1,5 @@
 This file contains message digests of all files listed in MANIFEST,
-signed via the Module::Signature module, version 0.68.
+signed via the Module::Signature module, version 0.70.
 
 To verify the content in this distribution, first make sure you have
 Module::Signature installed, then type:
@@ -15,20 +15,20 @@ not run its Makefile.PL or Build.PL.
 Hash: SHA1
 
 SHA1 0bfd1f8d2e9726bcba702674f51340f007fad2ad .perlall
-SHA1 63c5028756bee4467a0671c08c4b5a0e1cb309e5 Changes
+SHA1 b7eab74fdf00b0c3ac64fe935df915a67fae7b07 Changes
 SHA1 f9a303bd5a40f5485cd5dbbc925e3a4ce4b028d5 INSTALL
 SHA1 012fe1ce01fb53ea10dfac7145ee7217b8b3ae85 LICENSE
 SHA1 e149e165ed452c52fb40812bf714b34728009667 MANIFEST
-SHA1 fde836af692ae16d424d9677e989ab83fc525300 META.json
-SHA1 928f6255caa30023ad90912598d871f6553cfabc META.yml
+SHA1 7af51763f346f64cf535fce6d25d046cc62e4298 META.json
+SHA1 dd229ae7b94eec14660260d3100f59c1614644d6 META.yml
 SHA1 cdb4770535f45a11a9b6584de7c3141cb9211261 Makefile.PL
 SHA1 c5f7fa8121e5949e0af2de73cd559a3586b8fca5 README
 SHA1 fc062c56309e099c792055db5e80dd0dc83948ed lib/App/perlall.pm
-SHA1 ce6132cbe348bdbc125bbc148b85e0db551db7e7 lib/Devel/PatchPerl/Plugin/Asan.pm
+SHA1 11af0d0a910731997bd35abad9be5b7b4d9998f5 lib/Devel/PatchPerl/Plugin/Asan.pm
 SHA1 d8afc17cf6f7cda72ac1324ae4c498148f501fc7 lib/Devel/PatchPerl/Plugin/Compiler.pm
 SHA1 28f5f6d947bc96954450579439fbcda8a1efd726 perlall.ppt
 SHA1 5548d91cfff2b294741507c0c3607d8bb39a0982 perlall.txt
-SHA1 aec580cf67e74eb2d41cec75fa681d9366ac4be5 script/perlall
+SHA1 43324e7afdb8c24de2ef8c75d543af93fbe5f522 script/perlall
 SHA1 d90d4c1194ca8fd04915b2a2180078b57f945007 t/00-compile.t
 SHA1 1bffbbb6335975580195dbf0949f108808050f21 t/01-build.t
 SHA1 f31e2ebf44e7ffc20066d7415f6a80172ee3c511 t/01-linked.t
@@ -43,9 +43,9 @@ SHA1 bce5c6553353702031ecbfe3d3823e630ef595e9 t/08-version.t
 SHA1 7b8fce3eab9aadb9a6b86178246fb31da070f1d5 t/release-pod-coverage.t
 SHA1 7b8ee119c61c78aec82ea1c1ab9071a7086a3c0a t/release-pod-syntax.t
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.13 (Darwin)
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-iEYEARECAAYFAlFM3HwACgkQmm2SYo/9yUJe5ACfSAL4HbKyOgjcmVnTGKS9CvOE
-ICkAn1aMGxmG77vkMRWU/ytydVTVr1Sw
-=7wNe
+iEYEARECAAYFAlHfDeQACgkQmm2SYo/9yUJY5QCeN8C+7rixofBytzw1VL8n/bYu
+JeQAn2xSLMMK91Vn8bridGL1asrWDXW6
+=D9nR
 -----END PGP SIGNATURE-----
