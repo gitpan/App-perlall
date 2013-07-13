@@ -1,5 +1,5 @@
 This file contains message digests of all files listed in MANIFEST,
-signed via the Module::Signature module, version 0.70.
+signed via the Module::Signature module, version 0.73.
 
 To verify the content in this distribution, first make sure you have
 Module::Signature installed, then type:
@@ -15,20 +15,20 @@ not run its Makefile.PL or Build.PL.
 Hash: SHA1
 
 SHA1 0bfd1f8d2e9726bcba702674f51340f007fad2ad .perlall
-SHA1 b7eab74fdf00b0c3ac64fe935df915a67fae7b07 Changes
+SHA1 fc459249b224b30dcc18fb43ac19ab2631a8d756 Changes
 SHA1 f9a303bd5a40f5485cd5dbbc925e3a4ce4b028d5 INSTALL
 SHA1 012fe1ce01fb53ea10dfac7145ee7217b8b3ae85 LICENSE
 SHA1 e149e165ed452c52fb40812bf714b34728009667 MANIFEST
-SHA1 7af51763f346f64cf535fce6d25d046cc62e4298 META.json
-SHA1 dd229ae7b94eec14660260d3100f59c1614644d6 META.yml
+SHA1 569dc81de09871b640a5facb68a4f738559d3543 META.json
+SHA1 2b83f5b351a3601d5c88b5c482e7ae81faec81b6 META.yml
 SHA1 cdb4770535f45a11a9b6584de7c3141cb9211261 Makefile.PL
 SHA1 c5f7fa8121e5949e0af2de73cd559a3586b8fca5 README
 SHA1 fc062c56309e099c792055db5e80dd0dc83948ed lib/App/perlall.pm
-SHA1 11af0d0a910731997bd35abad9be5b7b4d9998f5 lib/Devel/PatchPerl/Plugin/Asan.pm
+SHA1 94195b06516c5c6a96ef8e3e8cd94d8bd895efcc lib/Devel/PatchPerl/Plugin/Asan.pm
 SHA1 d8afc17cf6f7cda72ac1324ae4c498148f501fc7 lib/Devel/PatchPerl/Plugin/Compiler.pm
 SHA1 28f5f6d947bc96954450579439fbcda8a1efd726 perlall.ppt
 SHA1 5548d91cfff2b294741507c0c3607d8bb39a0982 perlall.txt
-SHA1 43324e7afdb8c24de2ef8c75d543af93fbe5f522 script/perlall
+SHA1 0d345609697cad4e2b822163d42198e95b77f70f script/perlall
 SHA1 d90d4c1194ca8fd04915b2a2180078b57f945007 t/00-compile.t
 SHA1 1bffbbb6335975580195dbf0949f108808050f21 t/01-build.t
 SHA1 f31e2ebf44e7ffc20066d7415f6a80172ee3c511 t/01-linked.t
@@ -45,7 +45,7 @@ SHA1 7b8ee119c61c78aec82ea1c1ab9071a7086a3c0a t/release-pod-syntax.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.12 (GNU/Linux)
 
-iEYEARECAAYFAlHfDeQACgkQmm2SYo/9yUJY5QCeN8C+7rixofBytzw1VL8n/bYu
-JeQAn2xSLMMK91Vn8bridGL1asrWDXW6
-=D9nR
+iEYEARECAAYFAlHhsAQACgkQmm2SYo/9yUJoNgCeJnKVC7dzk49dh28vMMNLX4mR
+ZK0An3P1o6uqy/cSDofEODWKxTgsg0mS
+=EDrS
 -----END PGP SIGNATURE-----
