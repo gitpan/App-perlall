@@ -15,20 +15,21 @@ not run its Makefile.PL or Build.PL.
 Hash: SHA1
 
 SHA1 0bfd1f8d2e9726bcba702674f51340f007fad2ad .perlall
-SHA1 fc459249b224b30dcc18fb43ac19ab2631a8d756 Changes
+SHA1 f03a0d320e9822b6dfccb9ea2a444d7c401d3e6c Changes
 SHA1 f9a303bd5a40f5485cd5dbbc925e3a4ce4b028d5 INSTALL
 SHA1 012fe1ce01fb53ea10dfac7145ee7217b8b3ae85 LICENSE
-SHA1 e149e165ed452c52fb40812bf714b34728009667 MANIFEST
-SHA1 569dc81de09871b640a5facb68a4f738559d3543 META.json
-SHA1 2b83f5b351a3601d5c88b5c482e7ae81faec81b6 META.yml
+SHA1 35a5c11cea4b9f35d409ce95a7f921e0f71afc19 MANIFEST
+SHA1 73ad41f11290751236d8f62b2393aa7ef746104b META.json
+SHA1 a498066e215ff659800f6d10d79cbdf5eb1ff32e META.yml
 SHA1 cdb4770535f45a11a9b6584de7c3141cb9211261 Makefile.PL
 SHA1 c5f7fa8121e5949e0af2de73cd559a3586b8fca5 README
 SHA1 fc062c56309e099c792055db5e80dd0dc83948ed lib/App/perlall.pm
-SHA1 94195b06516c5c6a96ef8e3e8cd94d8bd895efcc lib/Devel/PatchPerl/Plugin/Asan.pm
-SHA1 d8afc17cf6f7cda72ac1324ae4c498148f501fc7 lib/Devel/PatchPerl/Plugin/Compiler.pm
+SHA1 e2a5f9464fc2bde07e9a3646113cd72cccd11926 lib/Devel/PatchPerl/Plugin/Asan.pm
+SHA1 c73bb1090a95cde8faf9bf5da622fdd0dd953b7d lib/Devel/PatchPerl/Plugin/Compiler.pm
+SHA1 98d699541ec7a2b6198dc3acfacc087444ca53ce lib/Devel/PatchPerl/Plugin/General.pm
 SHA1 28f5f6d947bc96954450579439fbcda8a1efd726 perlall.ppt
 SHA1 5548d91cfff2b294741507c0c3607d8bb39a0982 perlall.txt
-SHA1 0d345609697cad4e2b822163d42198e95b77f70f script/perlall
+SHA1 ce6c97f744394d9ec730f7230205fcee81993c8b script/perlall
 SHA1 d90d4c1194ca8fd04915b2a2180078b57f945007 t/00-compile.t
 SHA1 1bffbbb6335975580195dbf0949f108808050f21 t/01-build.t
 SHA1 f31e2ebf44e7ffc20066d7415f6a80172ee3c511 t/01-linked.t
@@ -41,11 +42,11 @@ SHA1 cd8fefff3f9d6a46743793ccf471f91aedb7683e t/06-makeinstall.t
 SHA1 e09d3448467d28d246fda81d0d2daf29d27b4ed4 t/07-help.t
 SHA1 bce5c6553353702031ecbfe3d3823e630ef595e9 t/08-version.t
 SHA1 7b8fce3eab9aadb9a6b86178246fb31da070f1d5 t/release-pod-coverage.t
-SHA1 7b8ee119c61c78aec82ea1c1ab9071a7086a3c0a t/release-pod-syntax.t
+SHA1 a140e259b4b7e888f2cc0ad72c718507f96d2db2 t/release-pod-syntax.t
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+Version: GnuPG v1.4.15 (GNU/Linux)
 
-iEYEARECAAYFAlHhsAQACgkQmm2SYo/9yUJoNgCeJnKVC7dzk49dh28vMMNLX4mR
-ZK0An3P1o6uqy/cSDofEODWKxTgsg0mS
-=EDrS
+iEYEARECAAYFAlJn8gMACgkQmm2SYo/9yUKO3gCfYdWm+rifJxP1r6Kh4OhjqWxg
+zwQAoIRIeH91gEBk+olzvkK1EiBrodnD
+=M+7T
 -----END PGP SIGNATURE-----

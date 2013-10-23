@@ -4,7 +4,7 @@
       "Reini Urban <rurban@cpanel.net>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "ExtUtils::MakeMaker version 6.64, CPAN::Meta::Converter version 2.130880",
+   "generated_by" : "ExtUtils::MakeMaker version 6.78, CPAN::Meta::Converter version 2.131560",
    "license" : [
       "perl_5"
    ],
@@ -61,5 +61,5 @@
          "url" : "git://github.com/rurban/App-perlall.git"
       }
    },
-   "version" : "0.37"
+   "version" : "0.39"
 }
